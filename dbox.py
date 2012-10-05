@@ -1,12 +1,18 @@
 #!/usr/bin/env python
-
+'''
+     file: dbox.py
+     desc: dropbox remote executor
+     A backdoor-like service for remote command execution. Dropbox service is used for internet traffic
+     USE IT WITH CAUTION!
+'''
 import os
 import time
 import daemon
 from os.path import join
 
-SOURCE_PATH = "/opt/home/swcai/Dropbox/Public/source"
-RESULT_FILE = "/opt/home/swcai/Dropbox/Public/results.txt"
+SOURCE_PATH = os.path.expanduser('~/Dropbox/Public/source')
+RESULT_FILE = os.path.expanduser('~/Dropbox/Public/results.txt')
+DEFAULT_LATENCY = 20 # unit in second
 
 def do_real_job(path, latency = 20):
     while True:
@@ -18,19 +24,17 @@ def do_real_job(path, latency = 20):
                 results.append(join(root, name))
         
         # execute the file if the file is valid
-        if len(results) != 0:
-            res = open(RESULT_FILE, 'a')
+        with open(RESULT_FILE, 'a') as res:
             for f in results:
                 for line in open(f).readlines():
                     res.write('command: ' + line)
                     res.write(os.popen(line).read())
                     res.write('\n')
                     res.flush()
-            res.close()
 
-        # sleep for a while
+        # sleep for a while. Don't make CPU too busy
         time.sleep(latency)
 
 if __name__ == "__main__":
     with daemon.DaemonContext():
-        do_real_job("/opt/home/swcai/Dropbox/Public/monitor", 5)
+        do_real_job(SOURCE_PATH, DEFAULT_LATENCY)
